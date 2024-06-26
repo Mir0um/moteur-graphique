@@ -1,20 +1,5 @@
 # 3D Rendering Engine
 
-## Table of Contents
-1. [Introduction](#introduction)
-2. [Project Structure](#project-structure)
-3. [Installation](#installation)
-4. [Usage](#usage)
-5. [Core Components](#core-components)
-   5.1 [lib_math.py](#lib_mathpy)
-   5.2 [moteur_graphique.py](#moteur_graphiquepy)
-   5.3 [main.py](#mainpy)
-6. [3D Rendering Process](#3d-rendering-process)
-7. [Camera Controls](#camera-controls)
-8. [Extending the Project](#extending-the-project)
-9. [Troubleshooting](#troubleshooting)
-10. [Contributing](#contributing)
-
 ## 1. Introduction
 
 This project is a simple 3D rendering engine implemented in Python. It allows for the rendering of 3D objects in a terminal window using ASCII characters. The engine supports basic 3D transformations, camera movements, and lighting effects.
