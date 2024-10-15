@@ -7,7 +7,7 @@ height -= 1
 pixelBuffer = [' ']*(width*height)
 
 class Camera:
-    def __init__(self,position,pitch,yaw,focalLenth=1) -> None:
+    def __init__(self,position,pitch,yaw,focalLenth=1.5) -> None:
         self.position = position
         self.pitch = pitch
         self.yaw = yaw
@@ -110,7 +110,7 @@ def clip(triangle,camPos,planeNormal):
                 ]
             
 def loadObj(filePath):
-    with open(filePath, "r") as  file:
+    with open("object/" + filePath, "r") as  file:
         lines = [line.rstrip('\n').split(' ') for line in file.readlines() if line.rstrip('\n')]
         
         vertices = []
@@ -120,6 +120,7 @@ def loadObj(filePath):
                 vertex = list(map(float,line[1:]))
                 vertices.append(vec3(vertex[0], vertex[1], vertex[2]))
             if line[0] == 'f':
+                print(line[0], line)
                 faces.append(list(map(int,line[1:])))
                         
         triangles = []
@@ -131,7 +132,7 @@ def loadObj(filePath):
                 triangles.append(Triangle3D(vertices[f[2]-1], vertices[f[3]-1], vertices[f[0]-1]))
         return triangles
             
-lightGradient = ".,;la#@"
+lightGradient = ".,:;irsXA253hMHGS#9B&@" #".,;la#@"
 
 def diffuseLight(light:LightSource, normal, vertex) -> str:
     lightDir = light.position-vertex
