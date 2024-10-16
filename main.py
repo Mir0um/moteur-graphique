@@ -5,11 +5,11 @@ import moteur_graphique as mg
 from lib_math import *
 
 # Initialisation de la caméra et de la source de lumière
-cam = mg.Camera(vec3(-1000, 0, -500), 0.0, -2.0,2)
-light = mg.LightSource(vec3(0, 20, 0))
+cam = mg.Camera(vec3(0, 1.5, 0), 0.0, -2.0,2)
+light = mg.LightSource(vec3(10, 20, 20))
 
 # Chargement du mesh du cube
-cube = mg.loadObj("ele.obj")
+cube = mg.loadObj("Car.obj")
 
 def process_input(controller, dt):
     """
@@ -38,7 +38,11 @@ def process_input(controller, dt):
                 cam.position.y += 0.01 * dt
             elif key.lower() == 'c':
                 cam.position.y -= 0.01 * dt
-            elif key == '\x1b':  # Touche ESC
+            elif key == "j":
+                cam.focalLenth += 0.1
+            elif key == 'k':
+                cam.focalLenth-= 0.1
+            elif key == '\x1b' or key == '\x1b\x1b':  # Touche ESC
                 print("Touche ESC détectée. Fermeture du programme.")
                 return False
         elif key_type == 'special':
@@ -94,6 +98,9 @@ def main():
 
             # Dessiner le frame
             mg.draw()
+
+            if True: #print info
+                print("light", light.position.printco(),"cam", cam.position.printco(), "camdir", (cam.pitch, cam.yaw),"FOV", (cam.focalLenth))
 
             # Petite pause pour limiter l'utilisation CPU
             time.sleep(0.033)
