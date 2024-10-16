@@ -6,10 +6,10 @@ from lib_math import *
 
 # Initialisation de la caméra et de la source de lumière
 cam = mg.Camera(vec3(0, 1.5, 0), 0.0, -2.0,2)
-light = mg.LightSource(vec3(10, 20, 20))
+light = mg.LightSource(vec3(-10, 20, 20))
 
 # Chargement du mesh du cube
-cube = mg.loadObj("Car.obj")
+cube = mg.loadObj("Man.obj")
 
 def process_input(controller, dt):
     """
@@ -79,6 +79,7 @@ def main():
     """
     print("Appuyez sur les touches pour voir lesquelles sont pressées (Appuyez sur ESC pour quitter).")
     controller = KeyboardController()  # Initialiser le contrôleur clavier
+    t = 0
     try:
         last = time.time()
         running = True
@@ -99,8 +100,14 @@ def main():
             # Dessiner le frame
             mg.draw()
 
+            t += 0.1
+            if t > 90:
+                t -= 90
+            light.position.x = sin(t) * 15
+            light.position.z = cos(t/2.1) * 30
+
             if True: #print info
-                print("light", light.position.printco(),"cam", cam.position.printco(), "camdir", (cam.pitch, cam.yaw),"FOV", (cam.focalLenth))
+                print(mg.color(255,255,255) + "time", t,  "light", light.position.printco(),"cam", cam.position.printco(), "camdir", (cam.pitch, cam.yaw),"FOV", (cam.focalLenth))
 
             # Petite pause pour limiter l'utilisation CPU
             time.sleep(0.033)

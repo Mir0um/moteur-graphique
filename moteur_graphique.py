@@ -150,7 +150,7 @@ def diffuseLight(light, normal, vertex) -> str:
         # Calculer la couleur en fonction de l'intensité lumineuse
         # Intensité varie de 0 à 1, on l'utilise pour ajuster les valeurs RGB
         brightness = round(intensity * 255)  # Échelle de 0 à 255
-        return color(brightness, brightness, brightness) + lightGradient
+        return color(brightness, int(brightness/2) , int(brightness/2)) + lightGradient
     else:
         return color(0,0,0) + lightGradient
 
