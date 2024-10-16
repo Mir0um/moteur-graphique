@@ -3,10 +3,19 @@ import platform
 from keyboard_library import KeyboardController  # Importer notre bibliothèque personnalisée
 import moteur_graphique as mg
 from lib_math import *
+import math
 
 # Initialisation de la caméra et de la source de lumière
-cam = mg.Camera(vec3(0, 1.5, 0), 0.0, -2.0,2)
-light = mg.LightSource(vec3(-10, 20, 20))
+cam = mg.Camera(vec3(0, 6, 15), 0.0, 3.2)
+light = mg.LightSource(vec3(0, 5, 0))
+
+sunlight = mg.LightSource(vec3(4, 20, 20), (255, 255, 170),0.8)  # Soleil jaune
+lamp = mg.LightSource(vec3(0, 5, 0), (0, 0, 255),0.4)   # Lampe bleu
+lamp2 = mg.LightSource(vec3(0, 5, 0), (255, 0, 0),0.4)   # Lampe rouge
+sunlight2 = mg.LightSource(vec3(-4, -20, -20), (255, 255, 170),0.8)  # Soleil jaune
+
+
+lights = [sunlight,lamp,lamp2,sunlight2]
 
 # Chargement du mesh du cube
 cube = mg.loadObj("Man.obj")
@@ -73,6 +82,24 @@ def process_input(controller, dt):
                     cam.yaw -= 0.01 * dt
     return True
 
+def animate_lights(t, lights):
+    t += 0.1
+    t %= 6  # Réinitialiser t pour éviter qu'il ne devienne trop grand
+
+    # Calculer une seule fois les fonctions trigonométriques
+    sin_t = math.sin(t) * 2.5
+    cos_t = math.cos(t) * 2.5
+
+    # Positionner la première lampe bleue
+    lights[1].position.x = sin_t
+    lights[1].position.z = cos_t + 7
+
+    # Positionner la deuxième lampe rouge face à la première
+    lights[2].position.x = -sin_t
+    lights[2].position.z = -cos_t + 7
+
+    return t
+
 def main():
     """
     Fonction principale qui initialise le contrôleur clavier et gère la boucle principale.
@@ -95,19 +122,19 @@ def main():
             mg.clear(' ')
 
             # Afficher le mesh du cube avec la caméra et la lumière
-            mg.putMesh(cube, cam, light)
+            mg.putMesh(cube, cam, lights)
 
             # Dessiner le frame
             mg.draw()
 
-            t += 0.1
-            if t > 90:
-                t -= 90
-            light.position.x = sin(t) * 15
-            light.position.z = cos(t/2.1) * 30
+            #animer la position de la lumière en cercle
+            t = animate_lights(t, lights)
+
 
             if True: #print info
                 print(mg.color(255,255,255) + "time", t,  "light", light.position.printco(),"cam", cam.position.printco(), "camdir", (cam.pitch, cam.yaw),"FOV", (cam.focalLenth))
+            else:
+                print()
 
             # Petite pause pour limiter l'utilisation CPU
             time.sleep(0.033)
