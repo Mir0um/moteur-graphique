@@ -23,8 +23,11 @@ class Camera:
         return vec3( cos(self.yaw),0,sin(self.yaw))
 
 class LightSource:
-    def __init__(self,position) -> None:
+    def __init__(self,position,color=(255,255,255),intensity=1) -> None:
         self.position = position
+        self.color = color
+        self.intensity = intensity
+
 
 def draw():
     print(''.join(pixelBuffer),end='')
@@ -136,21 +139,34 @@ def color(r, g, b, background=False):
     # Code ANSI pour changer la couleur (avant-plan ou arrière-plan)
     return '\033[{};2;{};{};{}m'.format(48 if background else 38, r, g, b)
 
-# Utilisation du caractère plein █ pour représenter les pixels
 lightGradient = "█"
 
-def diffuseLight(light, normal, vertex) -> str:
-    # Calculer la direction de la lumière
-    lightDir = light.position - vertex
-    
-    # Normaliser et calculer l'intensité lumineuse
-    intensity = dot(lightDir.normalize(), normal.normalize())
-    
-    if intensity >= 0:
-        # Calculer la couleur en fonction de l'intensité lumineuse
-        # Intensité varie de 0 à 1, on l'utilise pour ajuster les valeurs RGB
-        brightness = round(intensity * 255)  # Échelle de 0 à 255
-        return color(brightness, int(brightness/2) , int(brightness/2)) + lightGradient
+def diffuseLight(lights, normal, vertex) -> str:
+    total_r, total_g, total_b = 0, 0, 0  # Couleurs totales (R, G, B)
+    total_intensity = 0
+
+    for light in lights:
+        # Calculer la direction de la lumière
+        lightDir = light.position - vertex
+        
+        # Normaliser et calculer l'intensité lumineuse
+        intensity = dot(lightDir.normalize(), normal.normalize()) * light.intensity  # Moduler par l'intensité de la lumière
+        
+        if intensity > 0:
+            # Ajouter l'intensité et mélanger les couleurs en fonction de la lumière
+            total_intensity += intensity
+            total_r += intensity * light.color[0]
+            total_g += intensity * light.color[1]
+            total_b += intensity * light.color[2]
+
+    # Si l'intensité totale est supérieure à 0, on calcule la couleur finale
+    if total_intensity > 0:
+        total_intensity = min(total_intensity, 1.0)
+        # Calculer les valeurs RGB finales en tenant compte de l'intensité
+        brightness_r = round(min(total_r, 255))
+        brightness_g = round(min(total_g, 255))
+        brightness_b = round(min(total_b, 255))
+        return color(brightness_r, brightness_g, brightness_b) + lightGradient
     else:
         return color(0,0,0) + lightGradient
 
