@@ -82,7 +82,7 @@ class KeyboardController:
                             else:
                                 self.key = ('special', ch1 + ch2 + ch3)  # Autres séquences spéciales
                         else:
-                            self.key = ('escape', ch1 + ch2)  # Séquence d'échappement simple
+                            self.key = ('normal', ch1 + ch2)  # Séquence d'échappement simple
                     else:
                         self.key = ('normal', ch1)  # Touche normale
         finally:

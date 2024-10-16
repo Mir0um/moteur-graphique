@@ -132,12 +132,27 @@ def loadObj(filePath):
                 triangles.append(Triangle3D(vertices[f[2]-1], vertices[f[3]-1], vertices[f[0]-1]))
         return triangles
             
-lightGradient = ".,:;irsXA253hMHGS#9B&@" #".,;la#@"
+def color(r, g, b, background=False):
+    # Code ANSI pour changer la couleur (avant-plan ou arrière-plan)
+    return '\033[{};2;{};{};{}m'.format(48 if background else 38, r, g, b)
 
-def diffuseLight(light:LightSource, normal, vertex) -> str:
-    lightDir = light.position-vertex
-    intensity = dot(lightDir.normalize(),normal.normalize())
-    return lightGradient[round(intensity*(len(lightGradient)-1))] if intensity>=0 else "."
+# Utilisation du caractère plein █ pour représenter les pixels
+lightGradient = "█"
+
+def diffuseLight(light, normal, vertex) -> str:
+    # Calculer la direction de la lumière
+    lightDir = light.position - vertex
+    
+    # Normaliser et calculer l'intensité lumineuse
+    intensity = dot(lightDir.normalize(), normal.normalize())
+    
+    if intensity >= 0:
+        # Calculer la couleur en fonction de l'intensité lumineuse
+        # Intensité varie de 0 à 1, on l'utilise pour ajuster les valeurs RGB
+        brightness = round(intensity * 255)  # Échelle de 0 à 255
+        return color(brightness, brightness, brightness) + lightGradient
+    else:
+        return color(0,0,0) + lightGradient
 
 
 
