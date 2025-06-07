@@ -148,12 +148,18 @@ lightGradient = "█"
 AMBIENT_COLOR = (15, 15, 15)
 SPECULAR_SHININESS = 16
 
+# Parameters for simple ambient occlusion
+AO_DIRECTION = vec3(0, 1, 0)  # Upward direction receives less occlusion
+AO_STRENGTH = 0.4
+
 def diffuseLight(lights, normal, vertex, view_pos) -> str:
-    """Compute diffuse and specular lighting for a vertex."""
+    """Compute diffuse, specular and ambient occlusion lighting for a vertex."""
+    norm = normal.normalize()
+    occlusion = max(dot(norm, AO_DIRECTION.normalize()), 0)
+    ao_factor = 1 - AO_STRENGTH * (1 - occlusion)
+
     # Start with ambient contribution
     total_r, total_g, total_b = AMBIENT_COLOR
-
-    norm = normal.normalize()
 
     for light in lights:
         light_dir = light.position - vertex
@@ -174,9 +180,9 @@ def diffuseLight(lights, normal, vertex, view_pos) -> str:
             total_g += spec * 255 * light.intensity
             total_b += spec * 255 * light.intensity
 
-    brightness_r = round(min(total_r, 255))
-    brightness_g = round(min(total_g, 255))
-    brightness_b = round(min(total_b, 255))
+    brightness_r = round(min(total_r * ao_factor, 255))
+    brightness_g = round(min(total_g * ao_factor, 255))
+    brightness_b = round(min(total_b * ao_factor, 255))
     return color(brightness_r, brightness_g, brightness_b) + lightGradient
 
 
