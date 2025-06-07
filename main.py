@@ -1,5 +1,7 @@
 import time
 import platform
+import sys
+import os
 from keyboard_library import KeyboardController  # Importer notre bibliothèque personnalisée
 import moteur_graphique as mg
 from lib_math import *
@@ -17,8 +19,35 @@ sunlight2 = mg.LightSource(vec3(-4, -20, -20), (255, 255, 170),0.8)  # Soleil ja
 
 lights = [sunlight,lamp,lamp2,sunlight2]
 
+
+def select_obj_file() -> str:
+    """Return the name of an OBJ file chosen by the user or automatically."""
+    obj_files = [f for f in os.listdir("object") if f.endswith(".obj")]
+    if not obj_files:
+        raise FileNotFoundError("No .obj files found in 'object' directory")
+
+    if not sys.stdin.isatty():
+        # Non-interactive mode - choose the first file
+        print(f"Automatically selecting {obj_files[0]}")
+        return obj_files[0]
+
+    print("Select an OBJ file:")
+    for idx, name in enumerate(obj_files, start=1):
+        print(f"{idx}. {name}")
+
+    while True:
+        choice = input("Enter number: ")
+        try:
+            index = int(choice) - 1
+        except ValueError:
+            index = -1
+        if 0 <= index < len(obj_files):
+            return obj_files[index]
+        print("Invalid selection. Try again.")
+
+
 # Chargement du mesh du cube
-cube = mg.loadObj("Man.obj")
+cube = mg.loadObj(select_obj_file())
 
 def process_input(controller, dt):
     """
