@@ -1,9 +1,34 @@
 import time
 import platform
+import os
 from keyboard_library import KeyboardController  # Importer notre bibliothèque personnalisée
 import moteur_graphique as mg
 from lib_math import *
 import math
+
+
+def select_obj_file() -> str:
+    """Allow user to select an OBJ file from the 'object' directory."""
+    obj_dir = "object"
+    files = []
+    for name in os.listdir(obj_dir):
+        path = os.path.join(obj_dir, name)
+        if os.path.isfile(path) and name.lower().endswith(".obj"):
+            files.append(name)
+
+    if not files:
+        raise FileNotFoundError("No .obj files found in 'object' directory")
+
+    for i, name in enumerate(files, 1):
+        print(f"{i}. {name}")
+
+    choice = input("Select object number: ")
+    try:
+        idx = int(choice) - 1
+        return files[idx]
+    except (ValueError, IndexError):
+        print("Invalid selection, defaulting to first object.")
+        return files[0]
 
 # Initialisation de la caméra et de la source de lumière
 cam = mg.Camera(vec3(0, 6, 15), 0.0, 3.2)
@@ -17,8 +42,9 @@ sunlight2 = mg.LightSource(vec3(-4, -20, -20), (255, 255, 170),0.8)  # Soleil ja
 
 lights = [sunlight,lamp,lamp2,sunlight2]
 
-# Chargement du mesh du cube
-cube = mg.loadObj("Man.obj")
+# Chargement du mesh depuis le répertoire "object"
+selected_file = select_obj_file()
+cube = mg.loadObj(selected_file)
 
 def process_input(controller, dt):
     """

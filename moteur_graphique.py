@@ -117,7 +117,7 @@ def clip(triangle,camPos,planeNormal):
                 ]
             
 def loadObj(filePath):
-    with open("object/" + filePath, "r") as  file:
+    with open(os.path.join("object", filePath), "r") as  file:
         lines = [line.rstrip('\n').split(' ') for line in file.readlines() if line.rstrip('\n')]
         
         vertices = []
