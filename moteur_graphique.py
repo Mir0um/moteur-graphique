@@ -144,34 +144,40 @@ def color(r, g, b, background=False):
 
 lightGradient = "█"
 
-def diffuseLight(lights, normal, vertex) -> str:
-    total_r, total_g, total_b = 0, 0, 0  # Couleurs totales (R, G, B)
-    total_intensity = 0
+# Ambient lighting color applied to all surfaces
+AMBIENT_COLOR = (15, 15, 15)
+SPECULAR_SHININESS = 16
+
+def diffuseLight(lights, normal, vertex, view_pos) -> str:
+    """Compute diffuse and specular lighting for a vertex."""
+    # Start with ambient contribution
+    total_r, total_g, total_b = AMBIENT_COLOR
+
+    norm = normal.normalize()
 
     for light in lights:
-        # Calculer la direction de la lumière
-        lightDir = light.position - vertex
-        
-        # Normaliser et calculer l'intensité lumineuse
-        intensity = dot(lightDir.normalize(), normal.normalize()) * light.intensity  # Moduler par l'intensité de la lumière
-        
-        if intensity > 0:
-            # Ajouter l'intensité et mélanger les couleurs en fonction de la lumière
-            total_intensity += intensity
-            total_r += intensity * light.color[0]
-            total_g += intensity * light.color[1]
-            total_b += intensity * light.color[2]
+        light_dir = light.position - vertex
+        lnorm = light_dir.normalize()
 
-    # Si l'intensité totale est supérieure à 0, on calcule la couleur finale
-    if total_intensity > 0:
-        total_intensity = min(total_intensity, 1.0)
-        # Calculer les valeurs RGB finales en tenant compte de l'intensité
-        brightness_r = round(min(total_r, 255))
-        brightness_g = round(min(total_g, 255))
-        brightness_b = round(min(total_b, 255))
-        return color(brightness_r, brightness_g, brightness_b) + lightGradient
-    else:
-        return color(0,0,0) + lightGradient
+        # Diffuse component
+        diffuse = dot(lnorm, norm) * light.intensity
+        if diffuse > 0:
+            total_r += diffuse * light.color[0]
+            total_g += diffuse * light.color[1]
+            total_b += diffuse * light.color[2]
+
+            # Specular component toward the viewer
+            view_dir = (view_pos - vertex).normalize()
+            reflect_dir = 2 * dot(norm, lnorm) * norm - lnorm
+            spec = max(dot(view_dir, reflect_dir), 0) ** SPECULAR_SHININESS
+            total_r += spec * 255 * light.intensity
+            total_g += spec * 255 * light.intensity
+            total_b += spec * 255 * light.intensity
+
+    brightness_r = round(min(total_r, 255))
+    brightness_g = round(min(total_g, 255))
+    brightness_b = round(min(total_b, 255))
+    return color(brightness_r, brightness_g, brightness_b) + lightGradient
 
 
 
@@ -193,7 +199,7 @@ def putMesh(mesh:list[Triangle3D],cam:Camera, light:LightSource):
             surfaceNorm = crossProd(line1,line2)
 
             if dot(surfaceNorm,clippedTriangle.v1-cam.position) < 0:
-                lightStr = diffuseLight(light, surfaceNorm, clippedTriangle.v1)
+                lightStr = diffuseLight(light, surfaceNorm, clippedTriangle.v1, cam.position)
                 putTriangle(clippedTriangle
                             .translate(-1*cam.position)
                             .rotationY(cam.yaw)

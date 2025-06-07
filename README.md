@@ -8,7 +8,7 @@ Key features:
 - Terminal-based 3D rendering
 - Object loading from .obj files
 - Camera movement and rotation
-- Basic lighting and shading
+- Basic lighting including ambient, diffuse and specular shading
 - Vector and matrix operations for 3D graphics
 
 ## 2. Project Structure
@@ -88,7 +88,7 @@ Key components:
 - Drawing functions: `draw()`, `clear()`, `putPixel()`, `putTriangle()`
 - `clip()`: Implements the clipping algorithm for triangles outside the view frustum
 - `loadObj()`: Loads 3D models from .obj files
-- `diffuseLight()`: Calculates diffuse lighting for shading
+- `diffuseLight()`: Calculates ambient, diffuse and specular lighting for shading
 - `putMesh()`: Renders a 3D mesh with proper depth sorting and shading
 
 This module handles the conversion of 3D geometry to 2D screen space and manages the ASCII-based rendering in the terminal.
@@ -151,7 +151,7 @@ To extend the project, consider the following areas:
 
 4. **Add Color Support**: Modify the rendering system to use colored ASCII characters or switch to a graphical rendering backend like Pygame.
 
-5. **Implement More Shading Models**: Add support for specular lighting, ambient occlusion, or more advanced shading techniques.
+5. **Implement More Shading Models**: Specular lighting is now implemented; further improvements like ambient occlusion could enhance realism.
 
 6. **Scene Graph**: Implement a scene graph to manage multiple objects and their transformations more efficiently.
 
