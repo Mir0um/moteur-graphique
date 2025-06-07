@@ -8,7 +8,7 @@ Key features:
 - Terminal-based 3D rendering
 - Object loading from .obj files
 - Camera movement and rotation
-- Basic lighting including ambient occlusion, diffuse and specular shading
+- Configurable lighting with ambient occlusion and specular shading
 - Vector and matrix operations for 3D graphics
 
 ## 2. Project Structure
@@ -136,6 +136,8 @@ The camera can be controlled using the following keys:
 - D: Move right
 - Space: Move up
 - Shift: Move down
+- O: Toggle ambient occlusion
+- P: Toggle specular lighting
 
 The camera movement is implemented in the `inputs()` function in `main.py`. The movement speed is adjusted based on the frame time (`dt`) to ensure consistent movement across different frame rates.
 

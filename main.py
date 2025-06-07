@@ -51,6 +51,12 @@ def process_input(controller, dt):
                 cam.focalLenth += 0.1
             elif key == 'k':
                 cam.focalLenth-= 0.1
+            elif key.lower() == 'o':
+                state = mg.toggle_ambient_occlusion()
+                print("Ambient occlusion:", "on" if state else "off")
+            elif key.lower() == 'p':
+                state = mg.toggle_specular()
+                print("Specular lighting:", "on" if state else "off")
             elif key == '\x1b' or key == '\x1b\x1b':  # Touche ESC
                 print("Touche ESC détectée. Fermeture du programme.")
                 return False

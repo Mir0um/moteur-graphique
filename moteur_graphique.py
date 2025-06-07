@@ -152,11 +152,30 @@ SPECULAR_SHININESS = 16
 AO_DIRECTION = vec3(0, 1, 0)  # Upward direction receives less occlusion
 AO_STRENGTH = 0.4
 
+# Feature toggles
+AMBIENT_OCCLUSION_ENABLED = True
+SPECULAR_ENABLED = True
+
+def toggle_ambient_occlusion() -> bool:
+    """Enable or disable ambient occlusion."""
+    global AMBIENT_OCCLUSION_ENABLED
+    AMBIENT_OCCLUSION_ENABLED = not AMBIENT_OCCLUSION_ENABLED
+    return AMBIENT_OCCLUSION_ENABLED
+
+def toggle_specular() -> bool:
+    """Enable or disable specular highlights."""
+    global SPECULAR_ENABLED
+    SPECULAR_ENABLED = not SPECULAR_ENABLED
+    return SPECULAR_ENABLED
+
 def diffuseLight(lights, normal, vertex, view_pos) -> str:
     """Compute diffuse, specular and ambient occlusion lighting for a vertex."""
     norm = normal.normalize()
-    occlusion = max(dot(norm, AO_DIRECTION.normalize()), 0)
-    ao_factor = 1 - AO_STRENGTH * (1 - occlusion)
+    if AMBIENT_OCCLUSION_ENABLED:
+        occlusion = max(dot(norm, AO_DIRECTION.normalize()), 0)
+        ao_factor = 1 - AO_STRENGTH * (1 - occlusion)
+    else:
+        ao_factor = 1
 
     # Start with ambient contribution
     total_r, total_g, total_b = AMBIENT_COLOR
@@ -175,10 +194,11 @@ def diffuseLight(lights, normal, vertex, view_pos) -> str:
             # Specular component toward the viewer
             view_dir = (view_pos - vertex).normalize()
             reflect_dir = 2 * dot(norm, lnorm) * norm - lnorm
-            spec = max(dot(view_dir, reflect_dir), 0) ** SPECULAR_SHININESS
-            total_r += spec * 255 * light.intensity
-            total_g += spec * 255 * light.intensity
-            total_b += spec * 255 * light.intensity
+            if SPECULAR_ENABLED:
+                spec = max(dot(view_dir, reflect_dir), 0) ** SPECULAR_SHININESS
+                total_r += spec * 255 * light.intensity
+                total_g += spec * 255 * light.intensity
+                total_b += spec * 255 * light.intensity
 
     brightness_r = round(min(total_r * ao_factor, 255))
     brightness_g = round(min(total_g * ao_factor, 255))
@@ -187,7 +207,7 @@ def diffuseLight(lights, normal, vertex, view_pos) -> str:
 
 
 
-def putMesh(mesh:list[Triangle3D],cam:Camera, light:LightSource):
+def putMesh(mesh: list[Triangle3D], cam: Camera, lights: list[LightSource]):
     def distanceTriangle(triangle):
         position = (1/3)*(triangle.v1+triangle.v2+triangle.v3)-cam.position
         return position.length()
@@ -205,7 +225,7 @@ def putMesh(mesh:list[Triangle3D],cam:Camera, light:LightSource):
             surfaceNorm = crossProd(line1,line2)
 
             if dot(surfaceNorm,clippedTriangle.v1-cam.position) < 0:
-                lightStr = diffuseLight(light, surfaceNorm, clippedTriangle.v1, cam.position)
+                lightStr = diffuseLight(lights, surfaceNorm, clippedTriangle.v1, cam.position)
                 putTriangle(clippedTriangle
                             .translate(-1*cam.position)
                             .rotationY(cam.yaw)
