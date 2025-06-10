@@ -38,9 +38,7 @@ To set up the project, follow these steps:
    ```
 
 3. Install the required dependencies:
-   ```
-   pip install keyboard
-   ```
+   no dependency required
 
 ## 4. Usage
 
