@@ -208,6 +208,13 @@ def diffuseLight(lights, normal, vertex, view_pos) -> str:
 
 
 def putMesh(mesh: list[Triangle3D], cam: Camera, lights: list[LightSource]):
+    """Render a mesh using the camera and lighting setup.
+
+    Args:
+        mesh (list[Triangle3D]): Mesh to draw.
+        cam (Camera): Active camera.
+        lights (list[LightSource]): Light sources used for shading.
+    """
     def distanceTriangle(triangle):
         position = (1/3)*(triangle.v1+triangle.v2+triangle.v3)-cam.position
         return position.length()
