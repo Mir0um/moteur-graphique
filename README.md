@@ -8,7 +8,7 @@ Key features:
 - Terminal-based 3D rendering
 - Object loading from .obj files
 - Camera movement and rotation
-- Basic lighting and shading
+- Configurable lighting with ambient occlusion and specular shading
 - Vector and matrix operations for 3D graphics
 
 ## 2. Project Structure
@@ -88,7 +88,7 @@ Key components:
 - Drawing functions: `draw()`, `clear()`, `putPixel()`, `putTriangle()`
 - `clip()`: Implements the clipping algorithm for triangles outside the view frustum
 - `loadObj()`: Loads 3D models from .obj files
-- `diffuseLight()`: Calculates diffuse lighting for shading
+- `diffuseLight()`: Calculates ambient occlusion along with ambient, diffuse and specular lighting for shading
 - `putMesh()`: Renders a 3D mesh with proper depth sorting and shading
 
 This module handles the conversion of 3D geometry to 2D screen space and manages the ASCII-based rendering in the terminal.
@@ -136,6 +136,8 @@ The camera can be controlled using the following keys:
 - D: Move right
 - Space: Move up
 - Shift: Move down
+- O: Toggle ambient occlusion
+- P: Toggle specular lighting
 
 The camera movement is implemented in the `inputs()` function in `main.py`. The movement speed is adjusted based on the frame time (`dt`) to ensure consistent movement across different frame rates.
 
@@ -151,7 +153,7 @@ To extend the project, consider the following areas:
 
 4. **Add Color Support**: Modify the rendering system to use colored ASCII characters or switch to a graphical rendering backend like Pygame.
 
-5. **Implement More Shading Models**: Add support for specular lighting, ambient occlusion, or more advanced shading techniques.
+5. **Implement More Shading Models**: Ambient occlusion and specular lighting are now implemented; further improvements could enhance realism.
 
 6. **Scene Graph**: Implement a scene graph to manage multiple objects and their transformations more efficiently.
 

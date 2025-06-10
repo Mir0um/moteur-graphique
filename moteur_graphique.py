@@ -2,9 +2,13 @@ from math import floor
 import os
 from lib_math import *
 
-width,height = os.get_terminal_size()
-height -= 1
-pixelBuffer = [' ']*(width*height)
+try:
+    width, height = os.get_terminal_size()
+    height -= 1
+except OSError:
+    # Fallback when there's no associated terminal (e.g. during tests)
+    width, height = 80, 24
+pixelBuffer = [' '] * (width * height)
 
 class Camera:
     def __init__(self,position,pitch,yaw,focalLenth=1.5) -> None:
@@ -23,8 +27,11 @@ class Camera:
         return vec3( cos(self.yaw),0,sin(self.yaw))
 
 class LightSource:
-    def __init__(self,position) -> None:
+    def __init__(self,position,color=(255,255,255),intensity=1) -> None:
         self.position = position
+        self.color = color
+        self.intensity = intensity
+
 
 def draw():
     print(''.join(pixelBuffer),end='')
@@ -120,8 +127,7 @@ def loadObj(filePath):
                 vertex = list(map(float,line[1:]))
                 vertices.append(vec3(vertex[0], vertex[1], vertex[2]))
             if line[0] == 'f':
-                print(line[0], line)
-                faces.append(list(map(int,line[1:])))
+                faces.append(list(map(int, line[1:])))
                         
         triangles = []
         for f in faces:
@@ -132,16 +138,83 @@ def loadObj(filePath):
                 triangles.append(Triangle3D(vertices[f[2]-1], vertices[f[3]-1], vertices[f[0]-1]))
         return triangles
             
-lightGradient = ".,:;irsXA253hMHGS#9B&@" #".,;la#@"
+def color(r, g, b, background=False):
+    # Code ANSI pour changer la couleur (avant-plan ou arrière-plan)
+    return '\033[{};2;{};{};{}m'.format(48 if background else 38, r, g, b)
 
-def diffuseLight(light:LightSource, normal, vertex) -> str:
-    lightDir = light.position-vertex
-    intensity = dot(lightDir.normalize(),normal.normalize())
-    return lightGradient[round(intensity*(len(lightGradient)-1))] if intensity>=0 else "."
+lightGradient = "█"
+
+# Ambient lighting color applied to all surfaces
+AMBIENT_COLOR = (15, 15, 15)
+SPECULAR_SHININESS = 16
+
+# Parameters for simple ambient occlusion
+AO_DIRECTION = vec3(0, 1, 0)  # Upward direction receives less occlusion
+AO_STRENGTH = 0.4
+
+# Feature toggles
+AMBIENT_OCCLUSION_ENABLED = True
+SPECULAR_ENABLED = True
+
+def toggle_ambient_occlusion() -> bool:
+    """Enable or disable ambient occlusion."""
+    global AMBIENT_OCCLUSION_ENABLED
+    AMBIENT_OCCLUSION_ENABLED = not AMBIENT_OCCLUSION_ENABLED
+    return AMBIENT_OCCLUSION_ENABLED
+
+def toggle_specular() -> bool:
+    """Enable or disable specular highlights."""
+    global SPECULAR_ENABLED
+    SPECULAR_ENABLED = not SPECULAR_ENABLED
+    return SPECULAR_ENABLED
+
+def diffuseLight(lights, normal, vertex, view_pos) -> str:
+    """Compute diffuse, specular and ambient occlusion lighting for a vertex."""
+    norm = normal.normalize()
+    if AMBIENT_OCCLUSION_ENABLED:
+        occlusion = max(dot(norm, AO_DIRECTION.normalize()), 0)
+        ao_factor = 1 - AO_STRENGTH * (1 - occlusion)
+    else:
+        ao_factor = 1
+
+    # Start with ambient contribution
+    total_r, total_g, total_b = AMBIENT_COLOR
+
+    for light in lights:
+        light_dir = light.position - vertex
+        lnorm = light_dir.normalize()
+
+        # Diffuse component
+        diffuse = dot(lnorm, norm) * light.intensity
+        if diffuse > 0:
+            total_r += diffuse * light.color[0]
+            total_g += diffuse * light.color[1]
+            total_b += diffuse * light.color[2]
+
+            # Specular component toward the viewer
+            view_dir = (view_pos - vertex).normalize()
+            reflect_dir = 2 * dot(norm, lnorm) * norm - lnorm
+            if SPECULAR_ENABLED:
+                spec = max(dot(view_dir, reflect_dir), 0) ** SPECULAR_SHININESS
+                total_r += spec * 255 * light.intensity
+                total_g += spec * 255 * light.intensity
+                total_b += spec * 255 * light.intensity
+
+    brightness_r = round(min(total_r * ao_factor, 255))
+    brightness_g = round(min(total_g * ao_factor, 255))
+    brightness_b = round(min(total_b * ao_factor, 255))
+    return color(brightness_r, brightness_g, brightness_b) + lightGradient
 
 
 
-def putMesh(mesh:list[Triangle3D],cam:Camera, light:LightSource):
+def putMesh(mesh: list[Triangle3D], cam: Camera, lights: list[LightSource]):
+    """Render a mesh using the camera and lighting setup.
+
+    Args:
+        mesh (list[Triangle3D]): Mesh to draw.
+        cam (Camera): Active camera.
+        lights (list[LightSource]): Light sources used for shading.
+    """
     def distanceTriangle(triangle):
         position = (1/3)*(triangle.v1+triangle.v2+triangle.v3)-cam.position
         return position.length()
@@ -159,7 +232,7 @@ def putMesh(mesh:list[Triangle3D],cam:Camera, light:LightSource):
             surfaceNorm = crossProd(line1,line2)
 
             if dot(surfaceNorm,clippedTriangle.v1-cam.position) < 0:
-                lightStr = diffuseLight(light, surfaceNorm, clippedTriangle.v1)
+                lightStr = diffuseLight(lights, surfaceNorm, clippedTriangle.v1, cam.position)
                 putTriangle(clippedTriangle
                             .translate(-1*cam.position)
                             .rotationY(cam.yaw)

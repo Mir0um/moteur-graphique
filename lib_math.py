@@ -67,6 +67,9 @@ class vec3:
     def length(self):
         return sqrt(self.x*self.x+self.y*self.y+self.z*self.z)
     
+    def printco(self):
+        return self.x , self.y , self.z
+    
 class Triangle2D:    
     def __init__(self,v1,v2,v3) -> None:
         self.v1 = v1
