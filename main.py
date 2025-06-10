@@ -17,7 +17,7 @@ lamp2 = mg.LightSource(vec3(0, 5, 0), (255, 0, 0),0.4)   # Lampe rouge
 sunlight2 = mg.LightSource(vec3(-4, -20, -20), (255, 255, 170),0.8)  # Soleil jaune
 
 
-lights = [sunlight,lamp,lamp2,sunlight2]
+lights = [sunlight, lamp, lamp2, sunlight2]
 
 
 def select_obj_file() -> str:
@@ -48,6 +48,7 @@ def select_obj_file() -> str:
 
 # Chargement du mesh du cube
 cube = mg.loadObj(select_obj_file())
+
 
 def process_input(controller, dt):
     """
@@ -140,6 +141,9 @@ def main():
     Fonction principale qui initialise le contrôleur clavier et gère la boucle principale.
     """
     print("Appuyez sur les touches pour voir lesquelles sont pressées (Appuyez sur ESC pour quitter).")
+    obj_file = select_obj_file()
+    mesh = mg.loadObj(obj_file)
+
     controller = KeyboardController()  # Initialiser le contrôleur clavier
     t = 0
     try:
@@ -156,8 +160,8 @@ def main():
             # Effacer l'écran
             mg.clear(' ')
 
-            # Afficher le mesh du cube avec la caméra et la lumière
-            mg.putMesh(cube, cam, lights)
+            # Afficher le mesh sélectionné avec la caméra et la lumière
+            mg.putMesh(mesh, cam, lights)
 
             # Dessiner le frame
             mg.draw()
