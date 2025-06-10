@@ -2,9 +2,13 @@ from math import floor
 import os
 from lib_math import *
 
-width,height = os.get_terminal_size()
-height -= 1
-pixelBuffer = [' ']*(width*height)
+try:
+    width, height = os.get_terminal_size()
+    height -= 1
+except OSError:
+    # Fallback when there's no associated terminal (e.g. during tests)
+    width, height = 80, 24
+pixelBuffer = [' '] * (width * height)
 
 class Camera:
     def __init__(self,position,pitch,yaw,focalLenth=1.5) -> None:
@@ -123,8 +127,7 @@ def loadObj(filePath):
                 vertex = list(map(float,line[1:]))
                 vertices.append(vec3(vertex[0], vertex[1], vertex[2]))
             if line[0] == 'f':
-                print(line[0], line)
-                faces.append(list(map(int,line[1:])))
+                faces.append(list(map(int, line[1:])))
                         
         triangles = []
         for f in faces:

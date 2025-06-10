@@ -1,5 +1,6 @@
 import time
 import platform
+import os
 from keyboard_library import KeyboardController  # Importer notre bibliothèque personnalisée
 import moteur_graphique as mg
 from lib_math import *
@@ -15,10 +16,32 @@ lamp2 = mg.LightSource(vec3(0, 5, 0), (255, 0, 0),0.4)   # Lampe rouge
 sunlight2 = mg.LightSource(vec3(-4, -20, -20), (255, 255, 170),0.8)  # Soleil jaune
 
 
-lights = [sunlight,lamp,lamp2,sunlight2]
+lights = [sunlight, lamp, lamp2, sunlight2]
 
-# Chargement du mesh du cube
-cube = mg.loadObj("Man.obj")
+
+def select_obj_file() -> str:
+    """Affiche les fichiers .obj disponibles et renvoie celui choisi."""
+    files = [f for f in os.listdir("object") if f.lower().endswith(".obj")]
+    if not files:
+        raise FileNotFoundError("Aucun fichier .obj trouvé dans le dossier object.")
+
+    print("Fichiers .obj disponibles :")
+    for idx, name in enumerate(files, 1):
+        print(f"  {idx}. {name}")
+
+    choice = input("Choisissez un fichier (nom ou numéro) : ").strip()
+    selected = None
+    if choice.isdigit():
+        index = int(choice) - 1
+        if 0 <= index < len(files):
+            selected = files[index]
+    elif choice in files:
+        selected = choice
+
+    if not selected:
+        print("Choix invalide, chargement du premier fichier.")
+        selected = files[0]
+    return selected
 
 def process_input(controller, dt):
     """
@@ -105,6 +128,9 @@ def main():
     Fonction principale qui initialise le contrôleur clavier et gère la boucle principale.
     """
     print("Appuyez sur les touches pour voir lesquelles sont pressées (Appuyez sur ESC pour quitter).")
+    obj_file = select_obj_file()
+    mesh = mg.loadObj(obj_file)
+
     controller = KeyboardController()  # Initialiser le contrôleur clavier
     t = 0
     try:
@@ -121,8 +147,8 @@ def main():
             # Effacer l'écran
             mg.clear(' ')
 
-            # Afficher le mesh du cube avec la caméra et la lumière
-            mg.putMesh(cube, cam, lights)
+            # Afficher le mesh sélectionné avec la caméra et la lumière
+            mg.putMesh(mesh, cam, lights)
 
             # Dessiner le frame
             mg.draw()
