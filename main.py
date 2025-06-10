@@ -2,23 +2,10 @@ import time
 import platform
 import sys
 import os
-from keyboard_library import KeyboardController  # Importer notre bibliothèque personnalisée
+from keyboard_library import KeyboardController  # Importer la bibliothèque personnalisée
 import moteur_graphique as mg
 from lib_math import *
 import math
-
-# Initialisation de la caméra et de la source de lumière
-cam = mg.Camera(vec3(0, 6, 15), 0.0, 3.2)
-light = mg.LightSource(vec3(0, 5, 0))
-
-sunlight = mg.LightSource(vec3(4, 20, 20), (255, 255, 170),0.8)  # Soleil jaune
-lamp = mg.LightSource(vec3(0, 5, 0), (0, 0, 255),0.4)   # Lampe bleu
-lamp2 = mg.LightSource(vec3(0, 5, 0), (255, 0, 0),0.4)   # Lampe rouge
-sunlight2 = mg.LightSource(vec3(-4, -20, -20), (255, 255, 170),0.8)  # Soleil jaune
-
-
-lights = [sunlight, lamp, lamp2, sunlight2]
-
 
 def select_obj_file() -> str:
     """Return the name of an OBJ file chosen by the user or automatically."""
@@ -44,11 +31,6 @@ def select_obj_file() -> str:
         if 0 <= index < len(obj_files):
             return obj_files[index]
         print("Invalid selection. Try again.")
-
-
-# Chargement du mesh du cube
-cube = mg.loadObj(select_obj_file())
-
 
 def process_input(controller, dt):
     """
@@ -141,6 +123,7 @@ def main():
     Fonction principale qui initialise le contrôleur clavier et gère la boucle principale.
     """
     print("Appuyez sur les touches pour voir lesquelles sont pressées (Appuyez sur ESC pour quitter).")
+    # Chargement du mesh du cube
     obj_file = select_obj_file()
     mesh = mg.loadObj(obj_file)
 
@@ -183,4 +166,14 @@ def main():
         controller.stop()  # Arrêter le thread du contrôleur clavier
 
 if __name__ == "__main__":
+    # Initialisation de la caméra et de la source de lumière
+    cam = mg.Camera(vec3(0, 6, 15), 0.0, 3.2)
+    light = mg.LightSource(vec3(0, 5, 0))
+
+    sunlight = mg.LightSource(vec3(4, 20, 20), (255, 255, 170),0.8)  # Soleil jaune
+    lamp = mg.LightSource(vec3(0, 5, 0), (0, 0, 255),0.4)   # Lampe bleu
+    lamp2 = mg.LightSource(vec3(0, 5, 0), (255, 0, 0),0.4)   # Lampe rouge
+    sunlight2 = mg.LightSource(vec3(-4, -20, -20), (255, 255, 170),0.0)  # Soleil jaune
+
+    lights = [sunlight, lamp, lamp2, sunlight2]
     main()
