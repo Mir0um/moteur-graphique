@@ -144,38 +144,70 @@ def color(r, g, b, background=False):
 
 lightGradient = "█"
 
-def diffuseLight(lights, normal, vertex) -> str:
-    total_r, total_g, total_b = 0, 0, 0  # Couleurs totales (R, G, B)
-    total_intensity = 0
+# Ambient lighting color applied to all surfaces
+AMBIENT_COLOR = (15, 15, 15)
+SPECULAR_SHININESS = 16
+
+# Parameters for simple ambient occlusion
+AO_DIRECTION = vec3(0, 1, 0)  # Upward direction receives less occlusion
+AO_STRENGTH = 0.4
+
+# Feature toggles
+AMBIENT_OCCLUSION_ENABLED = True
+SPECULAR_ENABLED = True
+
+def toggle_ambient_occlusion() -> bool:
+    """Enable or disable ambient occlusion."""
+    global AMBIENT_OCCLUSION_ENABLED
+    AMBIENT_OCCLUSION_ENABLED = not AMBIENT_OCCLUSION_ENABLED
+    return AMBIENT_OCCLUSION_ENABLED
+
+def toggle_specular() -> bool:
+    """Enable or disable specular highlights."""
+    global SPECULAR_ENABLED
+    SPECULAR_ENABLED = not SPECULAR_ENABLED
+    return SPECULAR_ENABLED
+
+def diffuseLight(lights, normal, vertex, view_pos) -> str:
+    """Compute diffuse, specular and ambient occlusion lighting for a vertex."""
+    norm = normal.normalize()
+    if AMBIENT_OCCLUSION_ENABLED:
+        occlusion = max(dot(norm, AO_DIRECTION.normalize()), 0)
+        ao_factor = 1 - AO_STRENGTH * (1 - occlusion)
+    else:
+        ao_factor = 1
+
+    # Start with ambient contribution
+    total_r, total_g, total_b = AMBIENT_COLOR
 
     for light in lights:
-        # Calculer la direction de la lumière
-        lightDir = light.position - vertex
-        
-        # Normaliser et calculer l'intensité lumineuse
-        intensity = dot(lightDir.normalize(), normal.normalize()) * light.intensity  # Moduler par l'intensité de la lumière
-        
-        if intensity > 0:
-            # Ajouter l'intensité et mélanger les couleurs en fonction de la lumière
-            total_intensity += intensity
-            total_r += intensity * light.color[0]
-            total_g += intensity * light.color[1]
-            total_b += intensity * light.color[2]
+        light_dir = light.position - vertex
+        lnorm = light_dir.normalize()
 
-    # Si l'intensité totale est supérieure à 0, on calcule la couleur finale
-    if total_intensity > 0:
-        total_intensity = min(total_intensity, 1.0)
-        # Calculer les valeurs RGB finales en tenant compte de l'intensité
-        brightness_r = round(min(total_r, 255))
-        brightness_g = round(min(total_g, 255))
-        brightness_b = round(min(total_b, 255))
-        return color(brightness_r, brightness_g, brightness_b) + lightGradient
-    else:
-        return color(0,0,0) + lightGradient
+        # Diffuse component
+        diffuse = dot(lnorm, norm) * light.intensity
+        if diffuse > 0:
+            total_r += diffuse * light.color[0]
+            total_g += diffuse * light.color[1]
+            total_b += diffuse * light.color[2]
+
+            # Specular component toward the viewer
+            view_dir = (view_pos - vertex).normalize()
+            reflect_dir = 2 * dot(norm, lnorm) * norm - lnorm
+            if SPECULAR_ENABLED:
+                spec = max(dot(view_dir, reflect_dir), 0) ** SPECULAR_SHININESS
+                total_r += spec * 255 * light.intensity
+                total_g += spec * 255 * light.intensity
+                total_b += spec * 255 * light.intensity
+
+    brightness_r = round(min(total_r * ao_factor, 255))
+    brightness_g = round(min(total_g * ao_factor, 255))
+    brightness_b = round(min(total_b * ao_factor, 255))
+    return color(brightness_r, brightness_g, brightness_b) + lightGradient
 
 
 
-def putMesh(mesh:list[Triangle3D],cam:Camera, light:LightSource):
+def putMesh(mesh: list[Triangle3D], cam: Camera, lights: list[LightSource]):
     def distanceTriangle(triangle):
         position = (1/3)*(triangle.v1+triangle.v2+triangle.v3)-cam.position
         return position.length()
@@ -193,7 +225,7 @@ def putMesh(mesh:list[Triangle3D],cam:Camera, light:LightSource):
             surfaceNorm = crossProd(line1,line2)
 
             if dot(surfaceNorm,clippedTriangle.v1-cam.position) < 0:
-                lightStr = diffuseLight(light, surfaceNorm, clippedTriangle.v1)
+                lightStr = diffuseLight(lights, surfaceNorm, clippedTriangle.v1, cam.position)
                 putTriangle(clippedTriangle
                             .translate(-1*cam.position)
                             .rotationY(cam.yaw)
