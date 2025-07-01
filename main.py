@@ -73,9 +73,9 @@ def process_input(controller, dt):
     if key_type == "normal":
         actions = {
             "z": lambda: move(cam.getForwardDirection()),
-            "s": lambda: move(-cam.getForwardDirection()),
+            "s": lambda: move(cam.getForwardDirection() * -1),
             "d": lambda: move(cam.getRightDirection()),
-            "q": lambda: move(-cam.getRightDirection()),
+            "q": lambda: move(cam.getRightDirection() * -1),
             " ": lambda: adjust_height(1),
             "c": lambda: adjust_height(-1),
             "j": lambda: change_focal(0.1),
