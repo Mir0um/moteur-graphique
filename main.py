@@ -159,14 +159,14 @@ def main():
             # Traiter les entrées clavier
             running = process_input(controller, dt)
 
-            # Effacer l'écran
+            # Effacer le tampon d'affichage
             mg.clear(' ')
 
             # Afficher le mesh sélectionné avec la caméra et la lumière
             mg.putMesh(mesh, cam, lights)
             
-            # Effacer l'écran
-            os.system('cls' if os.name == 'nt' else 'clear')
+            # Rafraîchir la console sans sous-processus
+            mg.clear_console()
 
             # Dessiner le frame
             mg.draw()

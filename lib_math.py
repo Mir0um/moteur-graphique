@@ -2,7 +2,9 @@ from math import cos, sin, sqrt
 import moteur_graphique as mg
 
 class vec2:
-    def __init__(self,x,y) -> None:
+    __slots__ = ("x", "y")
+
+    def __init__(self, x, y) -> None:
         self.x = x
         self.y = y
 
@@ -27,7 +29,9 @@ class vec2:
         return v
     
 class vec3:
-    def __init__(self,x,y,z) -> None:
+    __slots__ = ("x", "y", "z")
+
+    def __init__(self, x, y, z) -> None:
         self.x = x
         self.y = y
         self.z = z
