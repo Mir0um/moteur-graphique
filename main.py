@@ -44,60 +44,79 @@ def process_input(controller, dt):
         bool: False si la touche ESC est pressée pour quitter, True sinon.
     """
     key_info = controller.get_key()
-    if key_info:
-        key_type, key = key_info
-        if key_type == 'normal':
-            if key.lower() == 'z':
-                cam.position += cam.getForwardDirection() * 0.01 * dt
-            elif key.lower() == 's':
-                cam.position -= cam.getForwardDirection() * 0.01 * dt
-            elif key.lower() == 'd':
-                cam.position += cam.getRightDirection() * 0.01 * dt
-            elif key.lower() == 'q':
-                cam.position -= cam.getRightDirection() * 0.01 * dt
-            elif key == ' ':
-                cam.position.y += 0.01 * dt
-            elif key.lower() == 'c':
-                cam.position.y -= 0.01 * dt
-            elif key == "j":
-                cam.focalLenth += 0.1
-            elif key == 'k':
-                cam.focalLenth-= 0.1
-            elif key.lower() == 'o':
-                state = mg.toggle_ambient_occlusion()
-                print("Ambient occlusion:", "on" if state else "off")
-            elif key.lower() == 'p':
-                state = mg.toggle_specular()
-                print("Specular lighting:", "on" if state else "off")
-            elif key == '\x1b' or key == '\x1b\x1b':  # Touche ESC
-                print("Touche ESC détectée. Fermeture du programme.")
+    if not key_info:
+        return True
+
+    key_type, key = key_info
+
+    def move(direction):
+        cam.position += direction * 0.01 * dt
+
+    def adjust_height(amount):
+        cam.position.y += amount * 0.01 * dt
+
+    def change_focal(amount):
+        cam.focalLenth += amount
+
+    def toggle_ao():
+        state = mg.toggle_ambient_occlusion()
+        print("Ambient occlusion:", "on" if state else "off")
+
+    def toggle_specular():
+        state = mg.toggle_specular()
+        print("Specular lighting:", "on" if state else "off")
+
+    def quit_program():
+        print("Touche ESC détectée. Fermeture du programme.")
+        return False
+
+    if key_type == "normal":
+        actions = {
+            "z": lambda: move(cam.getForwardDirection()),
+            "s": lambda: move(-cam.getForwardDirection()),
+            "d": lambda: move(cam.getRightDirection()),
+            "q": lambda: move(-cam.getRightDirection()),
+            " ": lambda: adjust_height(1),
+            "c": lambda: adjust_height(-1),
+            "j": lambda: change_focal(0.1),
+            "k": lambda: change_focal(-0.1),
+            "o": toggle_ao,
+            "p": toggle_specular,
+            "\x1b": quit_program,
+            "\x1b\x1b": quit_program,
+        }
+        action = actions.get(key.lower()) if len(key) == 1 else actions.get(key)
+        if action:
+            result = action()
+            if result is False:
                 return False
-        elif key_type == 'special':
-            # Gérer les touches spéciales comme les flèches
-            if platform.system() == 'Windows':
-                # Sous Windows, les touches spéciales sont renvoyées sous forme de bytes
-                if key == b'\xe0H':  # Flèche Haut
-                    if cam.pitch < 1.57:
-                        cam.pitch += 0.01 * dt
-                elif key == b'\xe0P':  # Flèche Bas
-                    if cam.pitch > -1.57:
-                        cam.pitch -= 0.01 * dt
-                elif key == b'\xe0K':  # Flèche Gauche
-                    cam.yaw += 0.01 * dt
-                elif key == b'\xe0M':  # Flèche Droite
-                    cam.yaw -= 0.01 * dt
-            else:
-                # Sous Unix-like, les touches spéciales sont des séquences d'échappement
-                if key == 'A':  # Flèche Haut
-                    if cam.pitch < 1.57:
-                        cam.pitch += 0.01 * dt
-                elif key == 'B':  # Flèche Bas
-                    if cam.pitch > -1.57:
-                        cam.pitch -= 0.01 * dt
-                elif key == 'D':  # Flèche Gauche
-                    cam.yaw += 0.01 * dt
-                elif key == 'C':  # Flèche Droite
-                    cam.yaw -= 0.01 * dt
+
+    elif key_type == "special":
+        def adjust_pitch(amount):
+            new_pitch = cam.pitch + amount * 0.01 * dt
+            cam.pitch = max(min(new_pitch, 1.57), -1.57)
+
+        def adjust_yaw(amount):
+            cam.yaw += amount * 0.01 * dt
+
+        if platform.system() == "Windows":
+            special = {
+                b"\xe0H": lambda: adjust_pitch(1),
+                b"\xe0P": lambda: adjust_pitch(-1),
+                b"\xe0K": lambda: adjust_yaw(1),
+                b"\xe0M": lambda: adjust_yaw(-1),
+            }
+        else:
+            special = {
+                "A": lambda: adjust_pitch(1),
+                "B": lambda: adjust_pitch(-1),
+                "D": lambda: adjust_yaw(1),
+                "C": lambda: adjust_yaw(-1),
+            }
+        action = special.get(key)
+        if action:
+            action()
+
     return True
 
 def animate_lights(t, lights):
