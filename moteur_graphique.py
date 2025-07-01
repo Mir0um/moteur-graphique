@@ -34,11 +34,13 @@ class LightSource:
 
 
 def draw():
-    print(''.join(pixelBuffer),end='')
+    print("\033[H" + ''.join(pixelBuffer), end='')
+
+def clear_console():
+    print("\033[2J\033[H", end='')
 
 def clear(char):
-    for i in range(width*height):
-        pixelBuffer[i] = char
+    pixelBuffer[:] = [char] * (width * height)
 
 def putPixel(v, char):
     px = round(v.x)
@@ -207,6 +209,10 @@ def diffuseLight(lights, normal, vertex, view_pos) -> str:
 
 
 
+_LAST_CAM_STATE = None
+_SORTED_MESH_CACHE = None
+
+
 def putMesh(mesh: list[Triangle3D], cam: Camera, lights: list[LightSource]):
     """Render a mesh using the camera and lighting setup.
 
@@ -216,10 +222,24 @@ def putMesh(mesh: list[Triangle3D], cam: Camera, lights: list[LightSource]):
         lights (list[LightSource]): Light sources used for shading.
     """
     def distanceTriangle(triangle):
-        position = (1/3)*(triangle.v1+triangle.v2+triangle.v3)-cam.position
+        position = (1/3) * (triangle.v1 + triangle.v2 + triangle.v3) - cam.position
         return position.length()
-    
-    mesh.sort(key=distanceTriangle, reverse=True )
+
+    global _LAST_CAM_STATE, _SORTED_MESH_CACHE
+    cam_state = (
+        cam.position.x,
+        cam.position.y,
+        cam.position.z,
+        cam.pitch,
+        cam.yaw,
+    )
+
+    if cam_state != _LAST_CAM_STATE:
+        mesh.sort(key=distanceTriangle, reverse=True)
+        _SORTED_MESH_CACHE = list(mesh)
+        _LAST_CAM_STATE = cam_state
+    elif _SORTED_MESH_CACHE is not None:
+        mesh = _SORTED_MESH_CACHE
 
     lookAt = cam.getLookAtDirection()
 
