@@ -164,6 +164,9 @@ def main():
 
             # Afficher le mesh sélectionné avec la caméra et la lumière
             mg.putMesh(mesh, cam, lights)
+            
+            # Effacer l'écran
+            os.system('cls' if os.name == 'nt' else 'clear')
 
             # Dessiner le frame
             mg.draw()
