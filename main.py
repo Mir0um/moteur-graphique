@@ -7,6 +7,80 @@ import moteur_graphique as mg
 from lib_math import *
 import math
 
+DEBUG = False
+
+NORMAL_ACTIONS = {}
+SPECIAL_ACTIONS_WINDOWS = {}
+SPECIAL_ACTIONS_UNIX = {}
+
+
+def move(direction, dt):
+    cam.position += direction * 0.01 * dt
+
+
+def adjust_height(amount, dt):
+    cam.position.y += amount * 0.01 * dt
+
+
+def change_focal(amount):
+    cam.focalLenth += amount
+
+
+def toggle_ao():
+    state = mg.toggle_ambient_occlusion()
+    print("Ambient occlusion:", "on" if state else "off")
+
+
+def toggle_specular():
+    state = mg.toggle_specular()
+    print("Specular lighting:", "on" if state else "off")
+
+
+def quit_program():
+    print("Touche ESC détectée. Fermeture du programme.")
+    return False
+
+
+def adjust_pitch(amount, dt):
+    new_pitch = cam.pitch + amount * 0.01 * dt
+    cam.pitch = max(min(new_pitch, 1.57), -1.57)
+
+
+def adjust_yaw(amount, dt):
+    cam.yaw += amount * 0.01 * dt
+
+
+def init_key_mappings():
+    global NORMAL_ACTIONS, SPECIAL_ACTIONS_WINDOWS, SPECIAL_ACTIONS_UNIX
+    NORMAL_ACTIONS = {
+        "z": lambda dt: move(cam.getForwardDirection(), dt),
+        "s": lambda dt: move(cam.getForwardDirection() * -1, dt),
+        "d": lambda dt: move(cam.getRightDirection(), dt),
+        "q": lambda dt: move(cam.getRightDirection() * -1, dt),
+        " ": lambda dt: adjust_height(1, dt),
+        "c": lambda dt: adjust_height(-1, dt),
+        "j": lambda dt: change_focal(0.1),
+        "k": lambda dt: change_focal(-0.1),
+        "o": lambda dt: toggle_ao(),
+        "p": lambda dt: toggle_specular(),
+        "\x1b": lambda dt: quit_program(),
+        "\x1b\x1b": lambda dt: quit_program(),
+    }
+
+    SPECIAL_ACTIONS_WINDOWS = {
+        b"\xe0H": lambda dt: adjust_pitch(1, dt),
+        b"\xe0P": lambda dt: adjust_pitch(-1, dt),
+        b"\xe0K": lambda dt: adjust_yaw(1, dt),
+        b"\xe0M": lambda dt: adjust_yaw(-1, dt),
+    }
+
+    SPECIAL_ACTIONS_UNIX = {
+        "A": lambda dt: adjust_pitch(1, dt),
+        "B": lambda dt: adjust_pitch(-1, dt),
+        "D": lambda dt: adjust_yaw(1, dt),
+        "C": lambda dt: adjust_yaw(-1, dt),
+    }
+
 def select_obj_file() -> str:
     """Return the name of an OBJ file chosen by the user or automatically."""
     obj_files = [f for f in os.listdir("object") if f.endswith(".obj")]
@@ -49,73 +123,20 @@ def process_input(controller, dt):
 
     key_type, key = key_info
 
-    def move(direction):
-        cam.position += direction * 0.01 * dt
-
-    def adjust_height(amount):
-        cam.position.y += amount * 0.01 * dt
-
-    def change_focal(amount):
-        cam.focalLenth += amount
-
-    def toggle_ao():
-        state = mg.toggle_ambient_occlusion()
-        print("Ambient occlusion:", "on" if state else "off")
-
-    def toggle_specular():
-        state = mg.toggle_specular()
-        print("Specular lighting:", "on" if state else "off")
-
-    def quit_program():
-        print("Touche ESC détectée. Fermeture du programme.")
-        return False
-
     if key_type == "normal":
-        actions = {
-            "z": lambda: move(cam.getForwardDirection()),
-            "s": lambda: move(cam.getForwardDirection() * -1),
-            "d": lambda: move(cam.getRightDirection()),
-            "q": lambda: move(cam.getRightDirection() * -1),
-            " ": lambda: adjust_height(1),
-            "c": lambda: adjust_height(-1),
-            "j": lambda: change_focal(0.1),
-            "k": lambda: change_focal(-0.1),
-            "o": toggle_ao,
-            "p": toggle_specular,
-            "\x1b": quit_program,
-            "\x1b\x1b": quit_program,
-        }
-        action = actions.get(key.lower()) if len(key) == 1 else actions.get(key)
+        action = NORMAL_ACTIONS.get(key.lower()) if len(key) == 1 else NORMAL_ACTIONS.get(key)
         if action:
-            result = action()
+            result = action(dt)
             if result is False:
                 return False
 
     elif key_type == "special":
-        def adjust_pitch(amount):
-            new_pitch = cam.pitch + amount * 0.01 * dt
-            cam.pitch = max(min(new_pitch, 1.57), -1.57)
-
-        def adjust_yaw(amount):
-            cam.yaw += amount * 0.01 * dt
-
         if platform.system() == "Windows":
-            special = {
-                b"\xe0H": lambda: adjust_pitch(1),
-                b"\xe0P": lambda: adjust_pitch(-1),
-                b"\xe0K": lambda: adjust_yaw(1),
-                b"\xe0M": lambda: adjust_yaw(-1),
-            }
+            action = SPECIAL_ACTIONS_WINDOWS.get(key)
         else:
-            special = {
-                "A": lambda: adjust_pitch(1),
-                "B": lambda: adjust_pitch(-1),
-                "D": lambda: adjust_yaw(1),
-                "C": lambda: adjust_yaw(-1),
-            }
-        action = special.get(key)
+            action = SPECIAL_ACTIONS_UNIX.get(key)
         if action:
-            action()
+            action(dt)
 
     return True
 
@@ -175,8 +196,20 @@ def main():
             t = animate_lights(t, lights)
 
 
-            if True: #print info
-                print(mg.color(255,255,255) + "time", t,  "light", light.position.printco(),"cam", cam.position.printco(), "camdir", (cam.pitch, cam.yaw),"FOV", (cam.focalLenth))
+            if DEBUG:
+                print(
+                    mg.color(255, 255, 255)
+                    + "time",
+                    t,
+                    "light",
+                    light.position.printco(),
+                    "cam",
+                    cam.position.printco(),
+                    "camdir",
+                    (cam.pitch, cam.yaw),
+                    "FOV",
+                    cam.focalLenth,
+                )
             else:
                 print()
 
@@ -198,4 +231,5 @@ if __name__ == "__main__":
     sunlight2 = mg.LightSource(vec3(-4, -20, -20), (255, 255, 170),0.0)  # Soleil jaune
 
     lights = [sunlight, lamp, lamp2, sunlight2]
+    init_key_mappings()
     main()

@@ -63,6 +63,16 @@ class vec3:
         x1= cos(yaw)*self.x+sin(yaw)*self.z
         z1=-sin(yaw)*self.x+cos(yaw)*self.z
         return vec3(x1,self.y,z1)
+
+    def rotationX_fast(self, sin_pitch, cos_pitch):
+        y1 = cos_pitch * self.y - sin_pitch * self.z
+        z1 = sin_pitch * self.y + cos_pitch * self.z
+        return vec3(self.x, y1, z1)
+
+    def rotationY_fast(self, sin_yaw, cos_yaw):
+        x1 = cos_yaw * self.x + sin_yaw * self.z
+        z1 = -sin_yaw * self.x + cos_yaw * self.z
+        return vec3(x1, self.y, z1)
     
     def normalize(self):
         norm = sqrt(self.x*self.x+self.y*self.y+self.z*self.z)
@@ -83,11 +93,14 @@ class Triangle2D:
     def toScreen(self):
         return Triangle2D(self.v1.toScreen(),self.v2.toScreen(),self.v3.toScreen())
 
-class Triangle3D:    
-    def __init__(self,v1,v2,v3) -> None:
+class Triangle3D:
+    def __init__(self, v1, v2, v3, normal=None, center=None) -> None:
         self.v1 = v1
         self.v2 = v2
         self.v3 = v3
+        # Precompute normal and center for performance
+        self.normal = normal if normal is not None else crossProd(v2 - v1, v3 - v1)
+        self.center = center if center is not None else (v1 + v2 + v3) / 3
 
     def projection(self,focalLenth):
         return Triangle2D(self.v1.projection(focalLenth),self.v2.projection(focalLenth),self.v3.projection(focalLenth))
@@ -97,9 +110,23 @@ class Triangle3D:
 
     def rotationX(self,pitch):
         return Triangle3D(self.v1.rotationX(pitch),self.v2.rotationX(pitch),self.v3.rotationX(pitch))
-    
+
     def rotationY(self,yaw):
         return Triangle3D(self.v1.rotationY(yaw),self.v2.rotationY(yaw),self.v3.rotationY(yaw))
+
+    def rotationX_fast(self, sin_pitch, cos_pitch):
+        return Triangle3D(
+            self.v1.rotationX_fast(sin_pitch, cos_pitch),
+            self.v2.rotationX_fast(sin_pitch, cos_pitch),
+            self.v3.rotationX_fast(sin_pitch, cos_pitch),
+        )
+
+    def rotationY_fast(self, sin_yaw, cos_yaw):
+        return Triangle3D(
+            self.v1.rotationY_fast(sin_yaw, cos_yaw),
+            self.v2.rotationY_fast(sin_yaw, cos_yaw),
+            self.v3.rotationY_fast(sin_yaw, cos_yaw),
+        )
 
 def LinePlaneCollision(planeNormal, planePoint, v1, v2):
     u=v2-v1
