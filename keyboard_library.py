@@ -69,7 +69,7 @@ class KeyboardController:
             tty.setcbreak(fd)  # Configurer le terminal en mode cbreak (lecture caractère par caractère)
             while self.running:
                 # Utiliser select pour vérifier si une touche a été pressée
-                rlist, _, _ = select.select([sys.stdin], [], [], 0.1)
+                rlist, _, _ = select.select([sys.stdin], [], [], 0.01)
                 if rlist:
                     ch1 = sys.stdin.read(1)  # Lire le premier caractère
                     if ch1 == '\x1b':

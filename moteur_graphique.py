@@ -9,6 +9,7 @@ except OSError:
     # Fallback when there's no associated terminal (e.g. during tests)
     width, height = 80, 24
 pixelBuffer = [' '] * (width * height)
+_CLEAR_CACHE = {}
 
 class Camera:
     def __init__(self,position,pitch,yaw,focalLenth=1.5) -> None:
@@ -40,7 +41,11 @@ def clear_console():
     print("\033[2J\033[H", end='')
 
 def clear(char):
-    pixelBuffer[:] = [char] * (width * height)
+    buf = _CLEAR_CACHE.get(char)
+    if buf is None or len(buf) != width * height:
+        buf = [char] * (width * height)
+        _CLEAR_CACHE[char] = buf
+    pixelBuffer[:] = buf
 
 def putPixel(v, char):
     px = round(v.x)
@@ -119,26 +124,35 @@ def clip(triangle,camPos,planeNormal):
                 ]
             
 def loadObj(filePath):
-    with open("object/" + filePath, "r") as  file:
-        lines = [line.rstrip('\n').split(' ') for line in file.readlines() if line.rstrip('\n')]
-        
-        vertices = []
-        faces  = []
-        for line in lines:
-            if line[0] == 'v':
-                vertex = list(map(float,line[1:]))
+    vertices = []
+    faces = []
+    with open("object/" + filePath, "r") as file:
+        for raw in file:
+            parts = raw.strip().split()
+            if not parts:
+                continue
+            if parts[0] == 'v':
+                vertex = list(map(float, parts[1:]))
                 vertices.append(vec3(vertex[0], vertex[1], vertex[2]))
-            if line[0] == 'f':
-                faces.append(list(map(int, line[1:])))
-                        
-        triangles = []
-        for f in faces:
-            if len(f) == 3:
-                triangles.append(Triangle3D(vertices[f[0]-1], vertices[f[1]-1], vertices[f[2]-1]))
-            if len(f) == 4:
-                triangles.append(Triangle3D(vertices[f[0]-1], vertices[f[1]-1], vertices[f[2]-1]))
-                triangles.append(Triangle3D(vertices[f[2]-1], vertices[f[3]-1], vertices[f[0]-1]))
-        return triangles
+            elif parts[0] == 'f':
+                faces.append([int(x) for x in parts[1:]])
+
+    triangles = []
+    for f in faces:
+        if len(f) == 3:
+            a, b, c = f[0] - 1, f[1] - 1, f[2] - 1
+            normal = crossProd(vertices[b] - vertices[a], vertices[c] - vertices[a])
+            center = (vertices[a] + vertices[b] + vertices[c]) / 3
+            triangles.append(Triangle3D(vertices[a], vertices[b], vertices[c], normal, center))
+        elif len(f) == 4:
+            a, b, c, d = f[0] - 1, f[1] - 1, f[2] - 1, f[3] - 1
+            normal1 = crossProd(vertices[b] - vertices[a], vertices[c] - vertices[a])
+            center1 = (vertices[a] + vertices[b] + vertices[c]) / 3
+            triangles.append(Triangle3D(vertices[a], vertices[b], vertices[c], normal1, center1))
+            normal2 = crossProd(vertices[c] - vertices[a], vertices[d] - vertices[a])
+            center2 = (vertices[c] + vertices[d] + vertices[a]) / 3
+            triangles.append(Triangle3D(vertices[c], vertices[d], vertices[a], normal2, center2))
+    return triangles
             
 def color(r, g, b, background=False):
     # Code ANSI pour changer la couleur (avant-plan ou arrière-plan)
@@ -152,6 +166,7 @@ SPECULAR_SHININESS = 16
 
 # Parameters for simple ambient occlusion
 AO_DIRECTION = vec3(0, 1, 0)  # Upward direction receives less occlusion
+AO_DIRECTION_NORM = AO_DIRECTION.normalize()
 AO_STRENGTH = 0.4
 
 # Feature toggles
@@ -174,7 +189,7 @@ def diffuseLight(lights, normal, vertex, view_pos) -> str:
     """Compute diffuse, specular and ambient occlusion lighting for a vertex."""
     norm = normal.normalize()
     if AMBIENT_OCCLUSION_ENABLED:
-        occlusion = max(dot(norm, AO_DIRECTION.normalize()), 0)
+        occlusion = max(dot(norm, AO_DIRECTION_NORM), 0)
         ao_factor = 1 - AO_STRENGTH * (1 - occlusion)
     else:
         ao_factor = 1
@@ -222,7 +237,7 @@ def putMesh(mesh: list[Triangle3D], cam: Camera, lights: list[LightSource]):
         lights (list[LightSource]): Light sources used for shading.
     """
     def distanceTriangle(triangle):
-        position = (1/3) * (triangle.v1 + triangle.v2 + triangle.v3) - cam.position
+        position = triangle.center - cam.position
         return position.length()
 
     global _LAST_CAM_STATE, _SORTED_MESH_CACHE
@@ -243,20 +258,24 @@ def putMesh(mesh: list[Triangle3D], cam: Camera, lights: list[LightSource]):
 
     lookAt = cam.getLookAtDirection()
 
+    sin_yaw = sin(cam.yaw)
+    cos_yaw = cos(cam.yaw)
+    sin_pitch = sin(cam.pitch)
+    cos_pitch = cos(cam.pitch)
+
     for triangle in mesh:
-        clippedTriangleList = clip(triangle,cam.position,lookAt)
+        clippedTriangleList = clip(triangle, cam.position, lookAt)
 
         for clippedTriangle in clippedTriangleList:
-            line1 = clippedTriangle.v2-clippedTriangle.v1
-            line2 = clippedTriangle.v3-clippedTriangle.v1
-            surfaceNorm = crossProd(line1,line2)
+            surfaceNorm = clippedTriangle.normal
 
-            if dot(surfaceNorm,clippedTriangle.v1-cam.position) < 0:
+            if dot(surfaceNorm, clippedTriangle.v1 - cam.position) < 0:
                 lightStr = diffuseLight(lights, surfaceNorm, clippedTriangle.v1, cam.position)
-                putTriangle(clippedTriangle
-                            .translate(-1*cam.position)
-                            .rotationY(cam.yaw)
-                            .rotationX(cam.pitch)
-                            .projection(cam.focalLenth)
-                            .toScreen(),lightStr)
+                transformed = clippedTriangle.translate(-1 * cam.position)
+                transformed = transformed.rotationY_fast(sin_yaw, cos_yaw)
+                transformed = transformed.rotationX_fast(sin_pitch, cos_pitch)
+                putTriangle(
+                    transformed.projection(cam.focalLenth).toScreen(),
+                    lightStr,
+                )
 
